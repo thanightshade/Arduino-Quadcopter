@@ -314,7 +314,7 @@ void calculateVelocities(){
   
 }
 
-void updateMotors(){
+inline void updateMotors(){
 
   a.write(va);
   c.write(vc);
@@ -323,7 +323,7 @@ void updateMotors(){
 
 }
 
-void arm(){
+inline void arm(){
 
   a.write(ESC_MIN);
   b.write(ESC_MIN);
@@ -334,11 +334,11 @@ void arm(){
 
 }
 
-void dmpDataReady() {
+inline void dmpDataReady() {
     mpuInterrupt = true;
 }
 
-void initRC(){
+inline void initRC(){
   pinMode(RC_PWR, OUTPUT);
   digitalWrite(RC_PWR, HIGH);
   
@@ -366,7 +366,7 @@ void initMPU(){
   }
 }
 
-void initESCs(){
+inline void initESCs(){
 
   a.attach(ESC_A);
   b.attach(ESC_B);
@@ -379,7 +379,7 @@ void initESCs(){
 
 }
 
-void initBalancing(){
+inline void initBalancing(){
 
   bal_axes = 0;
   bal_ac = 0;
@@ -387,7 +387,7 @@ void initBalancing(){
 
 }
 
-void initRegulators(){
+inline void initRegulators(){
 
   pitchReg.SetMode(AUTOMATIC);
   pitchReg.SetOutputLimits(-PID_PITCH_INFLUENCE, PID_PITCH_INFLUENCE);
@@ -400,36 +400,36 @@ void initRegulators(){
 
 }
 
-void rcInterrupt1(){
+inline void rcInterrupt1(){
    if(!interruptLock) ch1 = micros() - rcLastChange1;
    rcLastChange1 = micros(); 
 }
 
-void rcInterrupt2(){
+inline void rcInterrupt2(){
   if(!interruptLock) ch2 = micros() - rcLastChange2;
   rcLastChange2 = micros();
 }
 
-void rcInterrupt3(){
+inline void rcInterrupt3(){
   if(!interruptLock) ch3 = micros() - rcLastChange3;
   rcLastChange3 = micros();
 }
 
-void rcInterrupt4(){
+inline void rcInterrupt4(){
   if(!interruptLock) ch4 = micros() - rcLastChange4;
   rcLastChange4 = micros();
 }
 
-void rcInterrupt5(){
+inline void rcInterrupt5(){
   if(!interruptLock) ch5 = micros() - rcLastChange5;
   rcLastChange5 = micros();
 }
 
-void acquireLock(){
+inline void acquireLock(){
   interruptLock = true; 
 }
 
-void releaseLock(){
+inline void releaseLock(){
   interruptLock = false;
 }
 
