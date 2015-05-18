@@ -7,8 +7,8 @@
 #include <helper_3dmath.h>
 #include <MPU6050_6Axis_MotionApps20.h>
 #include <PID_v1.h>
-#include <PinChangeInt.h>
-#include <PinChangeIntConfig.h>
+//#include <PinChangeInt.h>
+//#include <PinChangeIntConfig.h>
 
 #define DEBUG
 
@@ -22,22 +22,22 @@
 #define ESC_C 5
 #define ESC_D 3
 
-#define RC_1 13
-#define RC_2 12 
-#define RC_3 11
-#define RC_4 10
-#define RC_5 8
-#define RC_PWR A0
+//#define RC_1 13
+//#define RC_2 12 
+//#define RC_3 11
+//#define RC_4 10
+//#define RC_5 8
+//#define RC_PWR A0
 
 
 /* ESC configuration
  *
  */
 
-#define ESC_MIN 22
+#define ESC_MIN 25
 #define ESC_MAX 115
 #define ESC_TAKEOFF_OFFSET 30
-#define ESC_ARM_DELAY 5000
+#define ESC_ARM_DELAY 1000
 
 /* RC configuration
  * 
@@ -105,10 +105,10 @@ VectorFloat gravity;                   // gravity vector for ypr
 float ypr[3] = {0.0f,0.0f,0.0f};       // yaw pitch roll values
 float yprLast[3] = {0.0f, 0.0f, 0.0f};
 
-volatile bool mpuInterrupt = false;    //interrupt flag
+volatile bool mpuInterrupt = false;     //interrupt flag
 
 /* Interrupt lock
- *
+ * 
  */
  
 boolean interruptLock = false;
@@ -158,19 +158,21 @@ float ch1Last, ch2Last, ch4Last, velocityLast;
  *
  */
 
-void setup(){
-  
+void setup() {  
+  //ch1 = 1800;
+  //ch2 = 1800;
+  ch3 = 1800; //velocity 43
+  //ch4 = 1800;
+  //ch5 = 1800;
   initRC();                            // Self explaining
   initMPU();
   initESCs();
   initBalancing();
   initRegulators();
   
-  #ifdef DEBUG                        // Device tests go here
-  
-  Serial.begin(9600);                 // Serial only necessary if in DEBUG mode
-  Serial.flush();
-  
+  #ifdef DEBUG                        // Device tests go here  
+   Serial.begin(9600);                 // Serial only necessary if in DEBUG mode
+   Serial.flush();  
   #endif
 }
 
@@ -179,20 +181,15 @@ void setup(){
  */
 
 void loop(){
-  
   while(!mpuInterrupt && fifoCount < packetSize){
-     
     /* Do nothing while MPU is not working
      * This should be a VERY short period
      */
-      
-  }
-  
-  getYPR();                          
-  computePID();
+  }  
+  //getYPR();                          
+  //computePID();
   calculateVelocities();
   updateMotors();
-  
 }
 
 /*  computePID function
@@ -201,13 +198,12 @@ void loop(){
  *  and computes PID output
  */
 
-void computePID(){
-
+void computePID() {
   acquireLock();
   
-  ch1 = floor(ch1/RC_ROUNDING_BASE)*RC_ROUNDING_BASE;
-  ch2 = floor(ch2/RC_ROUNDING_BASE)*RC_ROUNDING_BASE;
-  ch4 = floor(ch4/RC_ROUNDING_BASE)*RC_ROUNDING_BASE;
+  ch1 = floor(ch1 / RC_ROUNDING_BASE) * RC_ROUNDING_BASE;
+  ch2 = floor(ch2 / RC_ROUNDING_BASE) * RC_ROUNDING_BASE;
+  ch4 = floor(ch4 / RC_ROUNDING_BASE) * RC_ROUNDING_BASE;
 
   ch2 = map(ch2, RC_LOW_CH2, RC_HIGH_CH2, PITCH_MIN, PITCH_MAX);
   ch1 = map(ch1, RC_LOW_CH1, RC_HIGH_CH1, ROLL_MIN, ROLL_MAX);
@@ -238,7 +234,6 @@ void computePID(){
   yawReg.Compute();
   
   releaseLock();
-
 }
 
 /*  getYPR function
@@ -247,7 +242,7 @@ void computePID(){
  *  computes pitch, roll, yaw on the MPU's DMP
  */
 
-void getYPR(){
+void getYPR() {
   
     mpuInterrupt = false;
     mpuIntStatus = mpu.getIntStatus();
@@ -257,7 +252,7 @@ void getYPR(){
       
       mpu.resetFIFO(); 
     
-    }else if(mpuIntStatus & 0x02){
+    } else if(mpuIntStatus & 0x02) {
     
       while (fifoCount < packetSize) fifoCount = mpu.getFIFOCount();
   
@@ -270,7 +265,6 @@ void getYPR(){
       mpu.dmpGetYawPitchRoll(ypr, &q, &gravity);
     
     }
-
 }
 
 /*  calculateVelocities function
@@ -283,12 +277,12 @@ void calculateVelocities(){
 
   acquireLock();
 
-  ch3 = floor(ch3/RC_ROUNDING_BASE)*RC_ROUNDING_BASE;
+  ch3 = floor(ch3 / RC_ROUNDING_BASE) * RC_ROUNDING_BASE;
   velocity = map(ch3, RC_LOW_CH3, RC_HIGH_CH3, ESC_MIN, ESC_MAX);
-  
+ 
   releaseLock();
 
-  if((velocity < ESC_MIN) || (velocity > ESC_MAX)) velocity = velocityLast;
+  if ((velocity < ESC_MIN) || (velocity > ESC_MAX)) velocity = velocityLast;
   
   velocityLast = velocity;
   
@@ -302,20 +296,17 @@ void calculateVelocities(){
   vd = (abs((-100+bal_bd)/100))*v_bd;
   
   Serial.println(bal_bd);
-  
-  if(velocity < ESC_TAKEOFF_OFFSET){
-  
+
+  if (velocity < ESC_TAKEOFF_OFFSET) {  
     va = ESC_MIN;
     vb = ESC_MIN;
     vc = ESC_MIN;
-    vd = ESC_MIN;
-  
-  }
-  
+    vd = ESC_MIN;  
+  }  
+  Serial.println(velocity);
 }
 
 inline void updateMotors(){
-
   a.write(va);
   c.write(vc);
   b.write(vb);
@@ -324,14 +315,11 @@ inline void updateMotors(){
 }
 
 inline void arm(){
-
   a.write(ESC_MIN);
   b.write(ESC_MIN);
   c.write(ESC_MIN);
-  d.write(ESC_MIN);
-  
+  d.write(ESC_MIN);  
   delay(ESC_ARM_DELAY);
-
 }
 
 inline void dmpDataReady() {
@@ -339,56 +327,45 @@ inline void dmpDataReady() {
 }
 
 inline void initRC(){
-  pinMode(RC_PWR, OUTPUT);
-  digitalWrite(RC_PWR, HIGH);
-  
+  //pinMode(RC_PWR, OUTPUT);
+  //digitalWrite(RC_PWR, HIGH);
   // FIVE FUCKING INTERRUPTS !!!
-  PCintPort::attachInterrupt(RC_1, rcInterrupt1, CHANGE);
-  PCintPort::attachInterrupt(RC_2, rcInterrupt2, CHANGE);
-  PCintPort::attachInterrupt(RC_3, rcInterrupt3, CHANGE);
-  PCintPort::attachInterrupt(RC_4, rcInterrupt4, CHANGE);
-  PCintPort::attachInterrupt(RC_5, rcInterrupt5, CHANGE);
+  //PCintPort::attachInterrupt(RC_1, rcInterrupt1, CHANGE);
+  //PCintPort::attachInterrupt(RC_2, rcInterrupt2, CHANGE);
+  //PCintPort::attachInterrupt(RC_3, rcInterrupt3, CHANGE);
+  //PCintPort::attachInterrupt(RC_4, rcInterrupt4, CHANGE);
+  //PCintPort::attachInterrupt(RC_5, rcInterrupt5, CHANGE);
   
 }
 
-void initMPU(){
-  
+void initMPU(){  
   Wire.begin();
   mpu.initialize();
   devStatus = mpu.dmpInitialize();
-  if(devStatus == 0){
-  
+  if (devStatus == 0) {  
     mpu.setDMPEnabled(true);
     attachInterrupt(0, dmpDataReady, RISING);
     mpuIntStatus = mpu.getIntStatus();
     packetSize = mpu.dmpGetFIFOPacketSize();
-    
   }
 }
 
-inline void initESCs(){
-
+inline void initESCs() {
   a.attach(ESC_A);
   b.attach(ESC_B);
   c.attach(ESC_C);
-  d.attach(ESC_D);
-  
-  delay(100);
-  
+  d.attach(ESC_D);  
+  delay(100);  
   arm();
-
 }
 
-inline void initBalancing(){
-
+inline void initBalancing() {
   bal_axes = 0;
   bal_ac = 0;
   bal_bd = 0;
-
 }
 
-inline void initRegulators(){
-
+inline void initRegulators() {
   pitchReg.SetMode(AUTOMATIC);
   pitchReg.SetOutputLimits(-PID_PITCH_INFLUENCE, PID_PITCH_INFLUENCE);
   
@@ -397,7 +374,6 @@ inline void initRegulators(){
   
   yawReg.SetMode(AUTOMATIC);
   yawReg.SetOutputLimits(-PID_YAW_INFLUENCE, PID_YAW_INFLUENCE);
-
 }
 
 inline void rcInterrupt1(){
@@ -434,5 +410,6 @@ inline void releaseLock(){
 }
 
 #endif
+
 
 
